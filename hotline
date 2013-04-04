@@ -9,6 +9,7 @@ require 'curses'
 include Curses
 
 init_screen()
+start_color()
 
 class NArray; include Enumerable; end
 
@@ -16,33 +17,32 @@ def color mag, average
   size = mag / average
 
   if size >= 1
-    :on_intense_red
+    [COLOR_RED, true]
   elsif size >= 0.9
-    :on_red
+    COLOR_RED
   elsif size >= 0.8
-    :on_intense_yellow
+    [COLOR_YELLOW, true]
   elsif size >= 0.7
-    :on_yellow
+    COLOR_YELLOW
   elsif size >= 0.6
-    :on_intense_magenta
+    [COLOR_MAGENTA, true]
   elsif size >= 0.5
-    :on_magenta
+    COLOR_MAGENTA
   elsif size >= 0.4
-    :on_intense_blue
+    [COLOR_BLUE, true]
   elsif size >= 0.3
-    :on_blue
+    COLOR_BLUE
   elsif size >= 0.2
-    :on_intense_cyan
+    [COLOR_CYAN, true]
   elsif size >= 0.1
-    :on_cyan
+    COLOR_CYAN
   else
-    :on_green
+    COLOR_GREEN
   end
 end
 
 audio = `sox "#{ARGV[0]}" -t raw - 2>/dev/null`.force_encoding("ascii-8bit")
 
-video_dir = Dir.mktmpdir
 system "ffmpeg", "-i", ARGV[1], "-f", "image2", "-vframes", (audio.bytesize/47040).to_s, "#{video_dir}/%05d.ppm", 1 => IO::NULL, 2 => IO::NULL
 
 dev = CoreAudio.default_output_device
@@ -60,10 +60,14 @@ buf.start
   average_mag = na_complex[0..1].map {|n| n.magnitude}.inject(0,:+)/2
   sample_mag = na_complex.map {|n| n.magnitude}.inject(0,:+)/na_complex.size
 
-  bars = []
+  intensities = []
   (0..12).each do |n|
     pos = 1800 * n
-    bars << na_complex[pos+2..pos+1801].map {|n| n.magnitude}.inject(0,:+)/1800
+    magnitude = na_complex[pos+2..pos+1801].map {|n| n.magnitude}.inject(0,:+)/1800
+    # 0 is reserved, so we have to start from 1
+    color, intense = color(magnitude, sample_mag)
+    intensities << intense
+    init_pair(n+1,COLOR_BLACK,color)
   end
 
   buf << na
@@ -74,7 +78,8 @@ buf.start
   image.lines.each_slice(2).with_index do |lines, index|
     lines.each_with_index do |l,i|
       setpos(index*2+i,0)
-      addstr(l.chomp)
+      intensity = intensities[index] ? A_NORMAL : A_BOLD
+      attron(color_pair(index+1|intensity)) { addstr(l.chomp) }
     end
   end
 
