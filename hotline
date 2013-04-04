@@ -1,4 +1,24 @@
 #!/usr/bin/env ruby
+#
+# hotline is a curses-based audio visualization tool. It takes an audio
+# file and a video file and creates a composite, colour
+# ASCII visualization.
+# 
+# Currently, hotline requires sox (if audio is not in raw format),
+# ffmpeg (if video is not already in ASCII), and aview (ditto). Right
+# now only a custom version of aview works. Homebrew formula:
+# https://gist.github.com/mistydemeo/043274d4440b7017f593/raw/4e313e2e8f63da934e1c44c22009e3a415c3d9a7/aview.rb
+# Patch:
+# https://gist.github.com/mistydemeo/982ef8adf468c1e57457/raw/76a8ef7fe1624286152c81ddaa0eb7256bcc3429/aview.diff
+# 
+# Usage:
+# 
+# hotline source_audio source_video [--cache-video]
+# 
+# When --cache-video is specified, hotline will output a marshalled
+# copy of the ASCII video to standard out and won't play back the
+# visualization. You can use this to prerender video and avoid the
+# excruciatingly long startup time when ffmpeg is converting video.
 
 require 'curses'
 require 'fileutils'
