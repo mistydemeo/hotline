@@ -47,6 +47,9 @@ def color mag, average
 end
 
 def fetch_audio(from)
+  raise Errno::EINVAL.new("no audio specified") unless from
+  raise Errno::ENOENT.new(from) unless File.exist?(from)
+
   if File.extname(from) == '.raw'
     File.read(from)
   else
@@ -57,6 +60,9 @@ end
 # Can read frame data already serialized to disk, because ffmpeg's
 # writing PPM to disk is really really slow
 def fetch_video(from, frames)
+  raise Errno::EINVAL.new("no video specified") unless from
+  raise Errno::ENOENT.new(from) unless File.exist?(from)
+
   if File.extname(from) == '.txt'
     Marshal.load(File.read(from).force_encoding('ascii-8bit'))
   else
