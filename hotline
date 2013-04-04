@@ -1,11 +1,11 @@
 #!/usr/bin/env ruby
 
+require 'curses'
 require 'fileutils'
 require 'tmpdir'
 require 'narray' # gem narray
 require 'numru/fftw3' # gem ruby-fftw3
 require 'coreaudio' # gem coreaudio
-require 'curses'
 
 # frames get dropped here
 $video_dir = Dir.mktmpdir
