@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require 'tmpdir'
 require 'narray' # gem narray
 require 'numru/fftw3' # gem ruby-fftw3
