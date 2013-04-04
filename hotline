@@ -118,8 +118,10 @@ buf.start
 
   buf << na
 
-  setpos(0,0)
   image = video[n]
+  break unless image
+
+  setpos(0,0)
   image.lines.each_slice(2).with_index do |lines, index|
     lines.each_with_index do |l,i|
       setpos(index*2+i,0)
