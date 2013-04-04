@@ -16,6 +16,8 @@ include Curses
 init_screen()
 start_color()
 
+# Sadly NArray doesn't include Enumerable, even though it
+# defines its own #each
 class NArray; include Enumerable; end
 
 def color mag, average
