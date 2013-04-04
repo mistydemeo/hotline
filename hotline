@@ -11,6 +11,9 @@ require 'coreaudio' # gem coreaudio
 $video_dir = Dir.mktmpdir
 at_exit { FileUtils.rm_r $video_dir }
 
+# Chosen by fair dice roll
+$sample_size = 11760
+
 include Curses
 
 init_screen()
@@ -81,7 +84,7 @@ def fetch_video(from, frames)
 end
 
 audio = fetch_audio(ARGV[0])
-video = fetch_video(ARGV[1], audio.bytesize/47040)
+video = fetch_video(ARGV[1], audio.bytesize/$sample_size)
 
 if ARGV.include? '--cache-video'
   $stdout.puts Marshal.dump(video)
@@ -89,12 +92,12 @@ if ARGV.include? '--cache-video'
 end
 
 dev = CoreAudio.default_output_device
-buf = dev.output_buffer(47040)
+buf = dev.output_buffer($sample_size)
 buf.start
 
-(0..audio.bytesize/47040).each do |n|
-  pos = n * 47040
-  sample = audio[pos..pos+47039]
+(0..audio.bytesize/$sample_size).each do |n|
+  pos = n * $sample_size
+  sample = audio[pos..pos+$sample_size-1]
 
   na = NArray.to_narray(sample, NArray::SINT, 2, sample.bytesize/4)
   na_f = na.to_f
@@ -105,8 +108,8 @@ buf.start
 
   intensities = []
   (0..12).each do |n|
-    pos = 1800 * n
-    magnitude = na_complex[pos+2..pos+1801].map {|n| n.magnitude}.inject(0,:+)/1800
+    pos = $sample_size/26 * n
+    magnitude = na_complex[pos+2..pos+($sample_size/26)+1].map {|n| n.magnitude}.inject(0,:+)/($sample_size/26)
     # 0 is reserved, so we have to start from 1
     color, intense = color(magnitude, sample_mag)
     intensities << intense
