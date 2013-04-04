@@ -8,8 +8,8 @@ require 'coreaudio' # gem coreaudio
 require 'curses'
 
 # frames get dropped here
-video_dir = Dir.mktmpdir
-at_exit { FileUtils.rm_r video_dir }
+$video_dir = Dir.mktmpdir
+at_exit { FileUtils.rm_r $video_dir }
 
 include Curses
 
@@ -46,9 +46,36 @@ def color mag, average
   end
 end
 
-audio = `sox "#{ARGV[0]}" -t raw - 2>/dev/null`.force_encoding("ascii-8bit")
+def fetch_audio(from)
+  if File.extname(from) == '.raw'
+    File.read(from)
+  else
+    `sox "#{from}" -t raw - 2>/dev/null`.force_encoding("ascii-8bit")
+  end
+end
 
-system "ffmpeg", "-i", ARGV[1], "-f", "image2", "-vframes", (audio.bytesize/47040).to_s, "#{video_dir}/%05d.ppm", 1 => IO::NULL, 2 => IO::NULL
+# Can read frame data already serialized to disk, because ffmpeg's
+# writing PPM to disk is really really slow
+def fetch_video(from, frames)
+  if File.extname(from) == '.txt'
+    Marshal.load(File.read(from).force_encoding('ascii-8bit'))
+  else
+    system "ffmpeg", "-i", from, "-f", "image2", "-vframes", frames.to_s, "#{$video_dir}/%05d.ppm", 1 => IO::NULL, 2 => IO::NULL
+
+    (0..frames).map do |n|
+      image_path = File.join($video_dir,"%05d.ppm" % (n+1))
+      `aview -driver stdout -height 26 "#{image_path}"`.split("\f")[1][1..-1] if File.exist? image_path
+    end.compact
+  end
+end
+
+audio = fetch_audio(ARGV[0])
+video = fetch_video(ARGV[1], audio.bytesize/47040)
+
+if ARGV.include? '--cache-video'
+  $stdout.puts Marshal.dump(video)
+  exit
+end
 
 dev = CoreAudio.default_output_device
 buf = dev.output_buffer(47040)
@@ -78,8 +105,7 @@ buf.start
   buf << na
 
   setpos(0,0)
-  image_path = "%05d.ppm" % (n+1)
-  image = `aview -driver stdout -height 26 "#{video_dir}"/#{image_path}`.split("\f")[1][1..-1]
+  image = video[n]
   image.lines.each_slice(2).with_index do |lines, index|
     lines.each_with_index do |l,i|
       setpos(index*2+i,0)
