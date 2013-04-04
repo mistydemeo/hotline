@@ -55,7 +55,10 @@ def fetch_audio(from)
   if File.extname(from) == '.raw'
     File.read(from)
   else
-    `sox "#{from}" -t raw - 2>/dev/null`.force_encoding("ascii-8bit")
+    audio = `sox "#{from}" -t raw - 2>/dev/null`.force_encoding("ascii-8bit")
+    raise Errno::EINVAL.new("sox failed reading audio input") unless $?.success?
+
+    audio
   end
 end
 
