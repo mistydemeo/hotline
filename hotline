@@ -8,12 +8,11 @@ require 'curses'
 
 include Curses
 
-# init_screen()
+init_screen()
 
 class NArray; include Enumerable; end
 
 def color mag, average
-  # size = average / mag
   size = mag / average
 
   if size >= 1
