@@ -2,10 +2,13 @@ require 'tmpdir'
 require 'narray' # gem narray
 require 'numru/fftw3' # gem ruby-fftw3
 require 'coreaudio' # gem coreaudio
-require 'term/ansicolor' # gem term-ansicolor
+require 'curses'
+
+include Curses
+
+# init_screen()
 
 class NArray; include Enumerable; end
-class String; include Term::ANSIColor; end
 
 def color mag, average
   # size = average / mag
@@ -64,15 +67,17 @@ buf.start
 
   buf << na
 
-  system "clear"
-  system "stty sane"
+  setpos(0,0)
   image_path = "%05d.ppm" % (n+1)
   image = `aview -driver stdout -height 26 "#{video_dir}"/#{image_path}`.split("\f")[1][1..-1]
   image.lines.each_slice(2).with_index do |lines, index|
-    lines.each {|l| puts l.chomp!.black.send(color(bars[index], average_mag))}
+    lines.each_with_index do |l,i|
+      setpos(index*2+i,0)
+      addstr(l.chomp)
+    end
   end
 
-  print Term::ANSIColor.reset
+  refresh()
 end
 
 buf.stop
