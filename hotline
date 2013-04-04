@@ -12,7 +12,7 @@ $video_dir = Dir.mktmpdir
 at_exit { FileUtils.rm_r $video_dir }
 
 # Chosen by fair dice roll
-$sample_size = 11760
+$sample_size = 5880
 
 include Curses
 
